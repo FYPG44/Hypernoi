@@ -75,7 +75,7 @@ class proposed_solver_2D_with_sqrt_decomp:
 
     @ti.func
     def grow_circle(self, site_ind):  
-        for r in range(80):
+        for r in range(1, 2*self.w + 1):
             self.circle_dcs(r, site_ind)
 
     @ti.kernel
@@ -129,6 +129,20 @@ class proposed_solver_2D_with_sqrt_decomp:
         for i, j in self.result:
             self.result[i, j] = self.find_final_color(i, j)
 
+    @ti.kernel
+    def render_color(self, screen: ti.template(), site_info: ti.template()):
+        for I in ti.grouped(screen):
+            if self.result[I] != -1:
+                screen[I] = site_info[self.result[I]]
+            else:
+                screen[I].fill(-1)
+    @ti.kernel
+    def render_index(self, screen: ti.template()):
+        for I in ti.grouped(screen):
+            if self.result[I] != -1:
+                screen[I].fill(self.result[I] / self.num_site)
+            else:
+                screen[I].fill(-1)
                     
     # @ti.kernel
     def display(self):
