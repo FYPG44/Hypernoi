@@ -17,6 +17,8 @@ class proposed_solver_2D:
         self.result.fill(-1)
         self.sites = ti.Vector.field(n=sites.shape[1], dtype=ti.f32, shape=(sites.shape[0],))
         self.sites.from_numpy(sites)
+        self.num_site_sqr = self.num_site * self.num_site
+        self.radii = ti.field(dtype=ti.i32, shape=(self.num_site))
     
     # repeating lines can be avoided here
     @ti.func
@@ -70,7 +72,7 @@ class proposed_solver_2D:
 
     @ti.func
     def grow_circle(self, site_ind):
-        for r in range(1, 2*self.w+1):
+        for r in range(self.radii[site_ind]):
             self.circle_dcs(r, site_ind)
 
     @ti.kernel
@@ -112,7 +114,47 @@ class proposed_solver_2D:
         plt.imshow(self.result.to_numpy(), interpolation='nearest')
         plt.show()
     
+
+    @ti.func
+    def find_avg_radii(self, i, j):
+        index = ti.cast(
+                ts.vec(self.sites[i].x*self.w, self.sites[i].y*self.h), ti.i32)
+        xc, yc = index.x, index.y
+
+        index = ti.cast(
+                ts.vec(self.sites[j].x*self.w, self.sites[j].y*self.h), ti.i32)
+        xc1, yc1 = index.x, index.y
+        self.radii[i] += max(abs(xc - xc1), abs(yc - yc1))
+
+
+
+    @ti.kernel
+    def find_optimum_radii(self):
+        for num in range(1, self.num_site_sqr+1):
+            j = num % self.num_site
+            if j == 0:
+                j = self.num_site
+            i = (num + self.num_site - 1) // self.num_site
+
+            self.find_avg_radii(i-1, j-1)
+
+
+    @ti.func
+    def find_avg_radii_final(self, i):
+        self.radii[i] //= 2*self.num_site
+        print(self.radii[i])
+        # self.radii[i] = 100
+
+
+    @ti.kernel
+    def find_optimum_radii_final(self):
+        for i in range(self.num_site):
+            self.find_avg_radii_final(i)
+
+
     # @ti.func
     def solve_proposed(self):
+        self.find_optimum_radii()
+        self.find_optimum_radii_final()
         self.fill_frames()
         self.generate_result()

@@ -75,7 +75,7 @@ class proposed_solver_2D_with_sqrt_decomp:
 
     @ti.func
     def grow_circle(self, site_ind):  
-        for r in range(1, 2*self.w + 1):
+        for r in range(1, 2*self.w+1):
             self.circle_dcs(r, site_ind)
 
     @ti.kernel
