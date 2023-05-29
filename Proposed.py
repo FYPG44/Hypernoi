@@ -4,7 +4,6 @@ import taichi_glsl as ts
 from matplotlib import pyplot as plt
 ti.init()
 
-
 @ti.data_oriented
 class proposed_solver_2D:
     def __init__(self, width, height, sites):
